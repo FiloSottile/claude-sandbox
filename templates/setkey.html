@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Manage your key - Age Keyserver</title>
+	<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+	<h1>Manage your key</h1>
+
+	<p>Logged in as <strong>{{.Email}}</strong></p>
+
+	<div class="section">
+		{{if .CurrentKey}}
+		<h2>Current public key</h2>
+		<p class="code">{{.CurrentKey}}</p>
+		<p class="dimmed" style="margin-top: 0.5rem;">Last updated</p>
+		{{else}}
+		<p>You don't have a public key set yet.</p>
+		{{end}}
+
+		<h2>{{if .CurrentKey}}Update{{else}}Set{{end}} your age public key</h2>
+		<form action="/setkey" method="POST">
+			<input type="hidden" name="email" value="{{.Email}}">
+			<input type="hidden" name="sig" value="{{.Sig}}">
+			<input type="hidden" name="ts" value="{{.Ts}}">
+
+			<label for="pubkey">Age public key (age1...)</label>
+			<textarea id="pubkey" name="pubkey" placeholder="age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p">{{.CurrentKey}}</textarea>
+			<p class="dimmed">Enter your age public key. You can generate a keypair with: <code>age-keygen</code></p>
+
+			<button type="submit">{{if .CurrentKey}}Update{{else}}Set{{end}} key</button>
+		</form>
+
+		{{if .CurrentKey}}
+		<form action="/setkey" method="POST" style="margin-top: 1rem;">
+			<input type="hidden" name="email" value="{{.Email}}">
+			<input type="hidden" name="sig" value="{{.Sig}}">
+			<input type="hidden" name="ts" value="{{.Ts}}">
+			<input type="hidden" name="pubkey" value="">
+			<button type="submit" style="background: var(--bg); border-color: #664444; color: #ff6b6b;">Delete key</button>
+		</form>
+		{{end}}
+	</div>
+
+	<div class="footer">
+		<p>Learn more about <a href="https://age-encryption.org" target="_blank">age encryption</a></p>
+	</div>
+</body>
+</html>
