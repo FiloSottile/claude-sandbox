@@ -40,6 +40,7 @@ type Server struct {
 	dbpool    *sqlitex.Pool
 	templates *template.Template
 	hmacKey   []byte
+	baseURL   string
 }
 
 type KeyData struct {
@@ -93,20 +94,31 @@ func main() {
 	}
 	templates := template.Must(template.ParseFS(tmplFS, "*.html"))
 
+	// Determine base URL
+	var baseURL string
+	if postmarkToken == "" {
+		// Development mode: use listen address
+		baseURL = fmt.Sprintf("http://%s", *listenAddr)
+	} else {
+		// Production mode: use hardcoded production URL
+		baseURL = "https://keyserver.geomys.org"
+	}
+
 	// Create server
 	srv := &Server{
 		dbpool:    dbpool,
 		templates: templates,
 		hmacKey:   hmacKey,
+		baseURL:   baseURL,
 	}
 
 	// Set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", srv.handleHome)
 	mux.HandleFunc("POST /login", srv.handleLogin)
-	mux.HandleFunc("GET /auth", srv.handleAuth)
+	mux.HandleFunc("GET /manage", srv.handleManage)
 	mux.HandleFunc("POST /setkey", srv.handleSetKey)
-	mux.HandleFunc("GET /lookup", srv.handleLookup)
+	mux.HandleFunc("GET /api/lookup", srv.handleLookup)
 	mux.HandleFunc("POST /api/verify-token", srv.handleVerifyToken)
 
 	// Serve static files
@@ -174,10 +186,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleAuth(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleManage(w http.ResponseWriter, r *http.Request) {
 	// Now the token is in the URL fragment, handled client-side
-	// Just serve the auth.html page which will process the fragment
-	if err := s.templates.ExecuteTemplate(w, "auth.html", nil); err != nil {
+	// Just serve the manage.html page which will process the fragment
+	if err := s.templates.ExecuteTemplate(w, "manage.html", nil); err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		log.Printf("template error: %v", err)
 	}
@@ -289,14 +301,8 @@ func (s *Server) generateLoginLink(email string, r *http.Request) string {
 	h.Write([]byte(msg))
 	sig := base64.URLEncoding.EncodeToString(h.Sum(nil))
 
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
-	baseURL := fmt.Sprintf("%s://%s", scheme, r.Host)
-
-	return fmt.Sprintf("%s/auth#email=%s&ts=%d&sig=%s",
-		baseURL,
+	return fmt.Sprintf("%s/manage#email=%s&ts=%d&sig=%s",
+		s.baseURL,
 		url.QueryEscape(email),
 		ts,
 		url.QueryEscape(sig))

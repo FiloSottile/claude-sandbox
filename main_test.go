@@ -64,6 +64,7 @@ func setupTestServer(t *testing.T) *Server {
 		dbpool:    dbpool,
 		templates: templates,
 		hmacKey:   hmacKey,
+		baseURL:   "http://localhost:13889",
 	}
 }
 
@@ -126,7 +127,7 @@ func TestHandleLookup(t *testing.T) {
 				}
 			}
 
-			req := httptest.NewRequest("GET", "/lookup?email="+url.QueryEscape(tt.email), nil)
+			req := httptest.NewRequest("GET", "/api/lookup?email="+url.QueryEscape(tt.email), nil)
 			w := httptest.NewRecorder()
 
 			srv.handleLookup(w, req)
@@ -506,7 +507,7 @@ func TestAuthenticationFlow(t *testing.T) {
 	}
 
 	// Step 4: Lookup the key
-	req = httptest.NewRequest("GET", "/lookup?email="+url.QueryEscape(email), nil)
+	req = httptest.NewRequest("GET", "/api/lookup?email="+url.QueryEscape(email), nil)
 	w = httptest.NewRecorder()
 
 	srv.handleLookup(w, req)

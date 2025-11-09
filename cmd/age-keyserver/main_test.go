@@ -70,7 +70,7 @@ func TestCLIDirect(t *testing.T) {
 
 	// Set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /lookup", srv.handleLookup)
+	mux.HandleFunc("GET /api/lookup", srv.handleLookup)
 
 	// Start test server
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -345,7 +345,7 @@ func startServerCmd() script.Cmd {
 
 			// Set up routes
 			mux := http.NewServeMux()
-			mux.HandleFunc("GET /lookup", srv.handleLookup)
+			mux.HandleFunc("GET /api/lookup", srv.handleLookup)
 
 			// Start test server
 			listener, err := net.Listen("tcp", "127.0.0.1:0")
