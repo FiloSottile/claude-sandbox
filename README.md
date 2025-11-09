@@ -89,15 +89,18 @@ age -d -i key.txt secret.age
 
 The CLI client accepts the following options:
 
-- `-server`: Keyserver URL (default: from `AGE_KEYSERVER_URL` env var, or `http://localhost:13889`)
+- `-server`: Keyserver URL (default: from `AGE_KEYSERVER_URL` env var, or `https://keyserver.geomys.org`)
 
 Example:
 ```bash
+# Use the default public keyserver
+age-keyserver user@example.com
+
 # Use a custom server
 age-keyserver -server https://keys.example.com user@example.com
 
-# Or set via environment variable
-export AGE_KEYSERVER_URL=https://keys.example.com
+# Or set via environment variable for development
+export AGE_KEYSERVER_URL=http://localhost:13889
 age-keyserver user@example.com
 ```
 

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	serverURL = flag.String("server", "", "keyserver URL (default from AGE_KEYSERVER_URL or http://localhost:13889)")
+	serverURL = flag.String("server", "", "keyserver URL (default from AGE_KEYSERVER_URL or https://keyserver.geomys.org)")
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 		server = os.Getenv("AGE_KEYSERVER_URL")
 	}
 	if server == "" {
-		server = "http://localhost:13889"
+		server = "https://keyserver.geomys.org"
 	}
 
 	pubkey, err := lookupKey(server, email)
