@@ -17,7 +17,11 @@ A simple, minimalist web service for managing and looking up [age](https://age-e
 ## Building
 
 ```bash
+# Build the server
 go build -o keyserver
+
+# Build the CLI client
+go build -o age-keyserver ./cmd/age-keyserver
 ```
 
 ## Configuration
@@ -64,6 +68,37 @@ Response:
   "email": "user@example.com",
   "pubkey": "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
 }
+```
+
+### CLI Client
+
+The `age-keyserver` CLI client makes it easy to look up public keys for use with age encryption:
+
+```bash
+# Look up a public key
+age-keyserver user@example.com
+
+# Use with age encryption
+echo "secret" | age -r $(age-keyserver user@example.com) > secret.age
+
+# Decrypt
+age -d -i key.txt secret.age
+```
+
+#### Configuration
+
+The CLI client accepts the following options:
+
+- `-server`: Keyserver URL (default: from `AGE_KEYSERVER_URL` env var, or `http://localhost:13889`)
+
+Example:
+```bash
+# Use a custom server
+age-keyserver -server https://keys.example.com user@example.com
+
+# Or set via environment variable
+export AGE_KEYSERVER_URL=https://keys.example.com
+age-keyserver user@example.com
 ```
 
 ## Deployment
