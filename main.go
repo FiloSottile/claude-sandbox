@@ -41,15 +41,18 @@ type Server struct {
 	hmacKey   []byte
 }
 
+type KeyData struct {
+	Pubkey    string `json:"pubkey"`
+	UpdatedAt int64  `json:"updated_at"`
+}
+
 const (
 	linkValidDuration = 10 * time.Minute
 	schema            = `
 		CREATE TABLE IF NOT EXISTS keys (
 			email TEXT PRIMARY KEY,
-			pubkey TEXT NOT NULL,
-			updated_at INTEGER NOT NULL
-		);
-		CREATE INDEX IF NOT EXISTS idx_keys_updated_at ON keys(updated_at);
+			json_data BLOB
+		) STRICT;
 	`
 )
 
@@ -318,25 +321,41 @@ func (s *Server) verifyLoginLink(email, sig, tsStr string) bool {
 }
 
 func (s *Server) getCurrentKey(email string) string {
-	var pubkey string
-	err := s.db.QueryRow("SELECT pubkey FROM keys WHERE email = ?", email).Scan(&pubkey)
+	var jsonData []byte
+	err := s.db.QueryRow("SELECT json_data FROM keys WHERE email = ?", email).Scan(&jsonData)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.Printf("database error: %v", err)
 		}
 		return ""
 	}
-	return pubkey
+
+	var data KeyData
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		log.Printf("json unmarshal error: %v", err)
+		return ""
+	}
+
+	return data.Pubkey
 }
 
 func (s *Server) storeKey(email, pubkey string) error {
-	_, err := s.db.Exec(`
-		INSERT INTO keys (email, pubkey, updated_at)
-		VALUES (?, ?, ?)
+	data := KeyData{
+		Pubkey:    pubkey,
+		UpdatedAt: time.Now().Unix(),
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
+		INSERT INTO keys (email, json_data)
+		VALUES (?, JSONB(?))
 		ON CONFLICT(email) DO UPDATE SET
-			pubkey = excluded.pubkey,
-			updated_at = excluded.updated_at
-	`, email, pubkey, time.Now().Unix())
+			json_data = excluded.json_data
+	`, email, string(jsonData))
 	return err
 }
 
