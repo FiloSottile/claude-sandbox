@@ -8,7 +8,6 @@ import (
 	"embed"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"html/template"
@@ -59,10 +58,11 @@ const (
 func main() {
 	flag.Parse()
 
-	// Get Postmark token from environment
+	// Check for development vs production mode
 	postmarkToken := os.Getenv("POSTMARK_TOKEN")
 	if postmarkToken == "" {
-		log.Println("Warning: POSTMARK_TOKEN environment variable not set")
+		log.Println("Running in DEVELOPMENT mode (POSTMARK_TOKEN not set)")
+		log.Println("Login links will be logged to console instead of emailed")
 	}
 
 	// Generate random HMAC key
@@ -401,7 +401,12 @@ func verifyCaptcha(response string) bool {
 func sendLoginEmail(email, loginLink string) error {
 	postmarkToken := os.Getenv("POSTMARK_TOKEN")
 	if postmarkToken == "" {
-		return errors.New("POSTMARK_TOKEN not set")
+		// Development mode: log the link instead of emailing
+		log.Printf("=== DEVELOPMENT MODE: Login link for %s ===", email)
+		log.Printf("Click this link to login: %s", loginLink)
+		log.Printf("Link expires in 10 minutes")
+		log.Printf("==========================================")
+		return nil
 	}
 
 	emailBody := map[string]interface{}{
