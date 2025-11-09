@@ -39,6 +39,8 @@
 	</div>
 
 	<script>
+		const BROADCAST_CHANNEL_NAME = 'age-keyserver-auth';
+
 		function copyToClipboard(text) {
 			navigator.clipboard.writeText(text).then(() => {
 				const btn = document.getElementById('copy-btn');
@@ -79,6 +81,22 @@
 				}
 			} catch (err) {
 				resultDiv.innerHTML = '<p style="margin-top: 1rem;" class="error">Error looking up key.</p>';
+			}
+		});
+
+		// Listen for auth tokens from other tabs via BroadcastChannel
+		const authChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+		authChannel.addEventListener('message', (event) => {
+			if (event.data.type === 'auth-token') {
+				const { email, ts, sig } = event.data;
+
+				// Send confirmation back to the sender tab
+				authChannel.postMessage({
+					type: 'token-received-confirmation'
+				});
+
+				// Redirect to auth page with the token
+				window.location.href = `/auth#email=${encodeURIComponent(email)}&ts=${encodeURIComponent(ts)}&sig=${encodeURIComponent(sig)}`;
 			}
 		});
 	</script>
