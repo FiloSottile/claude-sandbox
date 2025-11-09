@@ -1,0 +1,22 @@
+# Test multiple key insertions and lookups
+
+# Start the test server
+startserver
+
+# Insert multiple keys
+insertkey alice@example.com age1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs3290pe
+insertkey bob@example.com age1zvkyg2lqzraa2lnjvqej32nkuu0ues2s82hzrye869xeexvn73eqz96p3z
+insertkey charlie@example.com age1lggyhqrw2nlhcxprm67z43rta597azn8gknawjehu9d9dl0jq3yqqvfafg
+
+# Lookup each key
+age-keyserver alice@example.com
+stdout 'age1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs3290pe'
+
+age-keyserver bob@example.com
+stdout 'age1zvkyg2lqzraa2lnjvqej32nkuu0ues2s82hzrye869xeexvn73eqz96p3z'
+
+age-keyserver charlie@example.com
+stdout 'age1lggyhqrw2nlhcxprm67z43rta597azn8gknawjehu9d9dl0jq3yqqvfafg'
+
+# Stop the server
+stopserver

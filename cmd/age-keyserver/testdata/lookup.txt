@@ -1,0 +1,14 @@
+# Test basic key lookup functionality
+
+# Start the test server
+startserver
+
+# Insert a test key
+insertkey test@example.com age1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs3290pe
+
+# Lookup the key using the CLI
+age-keyserver test@example.com
+stdout 'age1qyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqs3290pe'
+
+# Stop the server
+stopserver

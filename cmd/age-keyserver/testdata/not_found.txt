@@ -1,0 +1,10 @@
+# Test lookup for non-existent key
+
+# Start the test server
+startserver
+
+# Try to lookup a key that doesn't exist (should fail)
+! age-keyserver nonexistent@example.com
+
+# Stop the server
+stopserver

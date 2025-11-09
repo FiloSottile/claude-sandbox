@@ -331,7 +331,7 @@ func (s *Server) getCurrentKey(email string) string {
 	defer s.dbpool.Put(conn)
 
 	var jsonData []byte
-	err = sqlitex.Execute(conn, "SELECT json_data FROM keys WHERE email = ?", &sqlitex.ExecOptions{
+	err = sqlitex.Execute(conn, "SELECT json(json_data) FROM keys WHERE email = ?", &sqlitex.ExecOptions{
 		Args: []any{email},
 		ResultFunc: func(stmt *sqlite.Stmt) error {
 			jsonData = make([]byte, stmt.ColumnLen(0))
