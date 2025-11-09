@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"filippo.io/age"
-	_ "github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
+	"zombiezen.com/go/sqlite"
+	"zombiezen.com/go/sqlite/sqlitex"
 )
 
 var (
@@ -35,7 +35,7 @@ var (
 )
 
 type Server struct {
-	db        *sql.DB
+	dbpool    *sqlitex.Pool
 	templates *template.Template
 	hmacKey   []byte
 }
@@ -73,16 +73,16 @@ func main() {
 	log.Printf("Generated HMAC key (will invalidate on restart)")
 
 	// Initialize database
-	db, err := sql.Open("sqlite3", *dbPath)
+	dbpool, err := sqlitex.NewPool(*dbPath, sqlitex.PoolOptions{
+		PoolSize: 10,
+		PrepareConn: func(conn *sqlite.Conn) error {
+			return sqlitex.ExecuteTransient(conn, schema, nil)
+		},
+	})
 	if err != nil {
 		log.Fatal("failed to open database:", err)
 	}
-	defer db.Close()
-
-	// Create schema
-	if _, err := db.Exec(schema); err != nil {
-		log.Fatal("failed to create schema:", err)
-	}
+	defer dbpool.Close()
 
 	// Parse templates
 	tmplFS, err := fs.Sub(embeddedFS, "templates")
@@ -93,7 +93,7 @@ func main() {
 
 	// Create server
 	srv := &Server{
-		db:        db,
+		dbpool:    dbpool,
 		templates: templates,
 		hmacKey:   hmacKey,
 	}
@@ -324,12 +324,28 @@ func (s *Server) verifyLoginLink(email, sig, tsStr string) bool {
 }
 
 func (s *Server) getCurrentKey(email string) string {
-	var jsonData []byte
-	err := s.db.QueryRow("SELECT json_data FROM keys WHERE email = ?", email).Scan(&jsonData)
+	conn, err := s.dbpool.Take(context.Background())
 	if err != nil {
-		if err != sql.ErrNoRows {
-			log.Printf("database error: %v", err)
-		}
+		log.Printf("failed to get connection: %v", err)
+		return ""
+	}
+	defer s.dbpool.Put(conn)
+
+	var jsonData []byte
+	err = sqlitex.Execute(conn, "SELECT json_data FROM keys WHERE email = ?", &sqlitex.ExecOptions{
+		Args: []any{email},
+		ResultFunc: func(stmt *sqlite.Stmt) error {
+			jsonData = make([]byte, stmt.ColumnLen(0))
+			stmt.ColumnBytes(0, jsonData)
+			return nil
+		},
+	})
+	if err != nil {
+		log.Printf("database error: %v", err)
+		return ""
+	}
+
+	if len(jsonData) == 0 {
 		return ""
 	}
 
@@ -353,18 +369,32 @@ func (s *Server) storeKey(email, pubkey string) error {
 		return err
 	}
 
-	_, err = s.db.Exec(`
+	conn, err := s.dbpool.Take(context.Background())
+	if err != nil {
+		return err
+	}
+	defer s.dbpool.Put(conn)
+
+	return sqlitex.Execute(conn, `
 		INSERT INTO keys (email, json_data)
 		VALUES (?, JSONB(?))
 		ON CONFLICT(email) DO UPDATE SET
 			json_data = excluded.json_data
-	`, email, string(jsonData))
-	return err
+	`, &sqlitex.ExecOptions{
+		Args: []any{email, string(jsonData)},
+	})
 }
 
 func (s *Server) deleteKey(email string) error {
-	_, err := s.db.Exec("DELETE FROM keys WHERE email = ?", email)
-	return err
+	conn, err := s.dbpool.Take(context.Background())
+	if err != nil {
+		return err
+	}
+	defer s.dbpool.Put(conn)
+
+	return sqlitex.Execute(conn, "DELETE FROM keys WHERE email = ?", &sqlitex.ExecOptions{
+		Args: []any{email},
+	})
 }
 
 func verifyCaptcha(response string) bool {
