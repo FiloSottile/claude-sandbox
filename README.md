@@ -1,4 +1,4 @@
-# Age Keyserver
+# age Keyserver
 
 A simple, minimalist web service for managing and looking up [age](https://age-encryption.org) public keys by email address.
 
@@ -10,7 +10,7 @@ A simple, minimalist web service for managing and looking up [age](https://age-e
 - **Security first**:
   - HMAC-signed login links (10-minute expiration)
   - hCaptcha verification before sending emails
-  - Age public key validation
+  - age public key validation
 - **Simple deployment**: Single binary with embedded templates and assets
 - **Minimal dependencies**: Go standard library + age + pure-Go SQLite
 
@@ -128,7 +128,7 @@ example.com {
 - Login links expire after 10 minutes
 - HMAC key is generated randomly at startup (server restart invalidates existing links)
 - Clicking a login link only opens the management interface (no implicit actions)
-- Age public keys are validated using `filippo.io/age`
+- age public keys are validated using `filippo.io/age`
 - Captcha prevents automated email abuse
 
 ## License

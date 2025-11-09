@@ -115,7 +115,7 @@ func main() {
 
 	// Start server with h2c support
 	log.Println("")
-	log.Printf("Starting Age Keyserver on %s", *listenAddr)
+	log.Printf("Starting age Keyserver on %s", *listenAddr)
 	log.Printf("Open in browser: http://%s", *listenAddr)
 	log.Println("")
 	if err := http.ListenAndServe(*listenAddr, h2cHandler(mux)); err != nil {
@@ -415,7 +415,7 @@ func sendLoginEmail(email, loginLink string) error {
 	emailBody := map[string]interface{}{
 		"From":     "noreply@example.com", // TODO: configure this
 		"To":       email,
-		"Subject":  "Login to Age Keyserver",
+		"Subject":  "Login to age Keyserver",
 		"TextBody": fmt.Sprintf("Click this link to login and manage your age public key:\n\n%s\n\nThis link will expire in 10 minutes.", loginLink),
 		"HtmlBody": fmt.Sprintf(`<p>Click this link to login and manage your age public key:</p><p><a href="%s">%s</a></p><p>This link will expire in 10 minutes.</p>`, loginLink, loginLink),
 	}
