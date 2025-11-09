@@ -12,6 +12,15 @@
 
 	<p>A simple public keyserver for <a href="https://age-encryption.org" target="_blank">age</a> encryption.</p>
 
+	<div class="section cli-example-section">
+		<h2>Use from the command line</h2>
+		<p>Encrypt a file to someone's public key directly:</p>
+		<div class="key-result">
+			<code class="pubkey-display">age -r $(go run filippo.io/mostly-harmless/keyserver/cmd/age-keyserver@latest filippo@example.com)</code>
+			<button id="copy-cli-btn" onclick="copyCliExample()" class="copy-button">Copy</button>
+		</div>
+	</div>
+
 	<div class="section lookup-section">
 		<h2>Look up a public key</h2>
 		<form id="lookup-form">
@@ -40,6 +49,22 @@
 
 	<script>
 		const BROADCAST_CHANNEL_NAME = 'age-keyserver-auth';
+
+		function copyCliExample() {
+			const cliCommand = 'age -r $(go run filippo.io/mostly-harmless/keyserver/cmd/age-keyserver@latest filippo@example.com)';
+			navigator.clipboard.writeText(cliCommand).then(() => {
+				const btn = document.getElementById('copy-cli-btn');
+				const originalText = btn.textContent;
+				btn.textContent = 'Copied!';
+				btn.style.background = 'var(--button-bg)';
+				setTimeout(() => {
+					btn.textContent = originalText;
+					btn.style.background = '';
+				}, 2000);
+			}).catch(err => {
+				console.error('Failed to copy:', err);
+			});
+		}
 
 		function copyToClipboard(text) {
 			navigator.clipboard.writeText(text).then(() => {
