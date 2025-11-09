@@ -53,7 +53,7 @@ func main() {
 
 func lookupKey(serverURL, email string) (string, error) {
 	// Build the lookup URL
-	lookupURL := serverURL + "/lookup?email=" + url.QueryEscape(email)
+	lookupURL := serverURL + "/api/lookup?email=" + url.QueryEscape(email)
 
 	// Create HTTP client with timeout
 	client := &http.Client{

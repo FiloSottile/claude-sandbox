@@ -89,7 +89,7 @@
 			resultDiv.innerHTML = '<p style="margin-top: 1rem;" class="dimmed">Looking up...</p>';
 
 			try {
-				const resp = await fetch('/lookup?email=' + encodeURIComponent(email));
+				const resp = await fetch('/api/lookup?email=' + encodeURIComponent(email));
 				if (resp.ok) {
 					const data = await resp.json();
 					resultDiv.innerHTML = `
@@ -120,8 +120,8 @@
 					type: 'token-received-confirmation'
 				});
 
-				// Redirect to auth page with the token
-				window.location.href = `/auth#email=${encodeURIComponent(email)}&ts=${encodeURIComponent(ts)}&sig=${encodeURIComponent(sig)}`;
+				// Redirect to manage page with the token
+				window.location.href = `/manage#email=${encodeURIComponent(email)}&ts=${encodeURIComponent(ts)}&sig=${encodeURIComponent(sig)}`;
 			}
 		});
 	</script>
