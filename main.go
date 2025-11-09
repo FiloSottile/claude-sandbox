@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"filippo.io/age"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"zombiezen.com/go/sqlite"
 	"zombiezen.com/go/sqlite/sqlitex"
 )
@@ -119,21 +121,11 @@ func main() {
 	log.Printf("Starting age Keyserver on %s", *listenAddr)
 	log.Printf("Open in browser: http://%s", *listenAddr)
 	log.Println("")
-	if err := http.ListenAndServe(*listenAddr, h2cHandler(mux)); err != nil {
+	h2s := &http2.Server{}
+	handler := h2c.NewHandler(mux, h2s)
+	if err := http.ListenAndServe(*listenAddr, handler); err != nil {
 		log.Fatal("server error:", err)
 	}
-}
-
-// h2cHandler wraps the handler to support HTTP/2 cleartext
-func h2cHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Support HTTP/2 over cleartext
-		if r.ProtoMajor == 2 && r.Header.Get("Upgrade") == "" {
-			h.ServeHTTP(w, r)
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
 }
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
