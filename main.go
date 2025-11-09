@@ -105,6 +105,7 @@ func main() {
 	mux.HandleFunc("GET /auth", srv.handleAuth)
 	mux.HandleFunc("POST /setkey", srv.handleSetKey)
 	mux.HandleFunc("GET /lookup", srv.handleLookup)
+	mux.HandleFunc("POST /api/verify-token", srv.handleVerifyToken)
 
 	// Serve static files
 	staticFS, err := fs.Sub(embeddedFS, "static")
@@ -182,34 +183,40 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAuth(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
-	sig := r.URL.Query().Get("sig")
-	ts := r.URL.Query().Get("ts")
+	// Now the token is in the URL fragment, handled client-side
+	// Just serve the auth.html page which will process the fragment
+	if err := s.templates.ExecuteTemplate(w, "auth.html", nil); err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Printf("template error: %v", err)
+	}
+}
 
-	if email == "" || sig == "" || ts == "" {
-		http.Error(w, "Invalid login link", http.StatusBadRequest)
+func (s *Server) handleVerifyToken(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+		Ts    string `json:"ts"`
+		Sig   string `json:"sig"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
 	// Verify signature and timestamp
-	if !s.verifyLoginLink(email, sig, ts) {
+	if !s.verifyLoginLink(req.Email, req.Sig, req.Ts) {
 		http.Error(w, "Invalid or expired login link", http.StatusUnauthorized)
 		return
 	}
 
 	// Get current key if exists
-	currentKey := s.getCurrentKey(email)
+	currentKey := s.getCurrentKey(req.Email)
 
-	// Show set key page
-	if err := s.templates.ExecuteTemplate(w, "setkey.html", map[string]string{
-		"Email":      email,
-		"Sig":        sig,
-		"Ts":         ts,
-		"CurrentKey": currentKey,
-	}); err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		log.Printf("template error: %v", err)
-	}
+	// Return verification response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"currentKey": currentKey,
+	})
 }
 
 func (s *Server) handleSetKey(w http.ResponseWriter, r *http.Request) {
@@ -296,7 +303,7 @@ func (s *Server) generateLoginLink(email string, r *http.Request) string {
 	}
 	baseURL := fmt.Sprintf("%s://%s", scheme, r.Host)
 
-	return fmt.Sprintf("%s/auth?email=%s&ts=%d&sig=%s",
+	return fmt.Sprintf("%s/auth#email=%s&ts=%d&sig=%s",
 		baseURL,
 		url.QueryEscape(email),
 		ts,
