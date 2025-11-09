@@ -114,7 +114,10 @@ func main() {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	// Start server with h2c support
-	log.Printf("Starting server on %s", *listenAddr)
+	log.Println("")
+	log.Printf("Starting Age Keyserver on %s", *listenAddr)
+	log.Printf("Open in browser: http://%s", *listenAddr)
+	log.Println("")
 	if err := http.ListenAndServe(*listenAddr, h2cHandler(mux)); err != nil {
 		log.Fatal("server error:", err)
 	}
